@@ -3,46 +3,95 @@ const {input} = require('./input');
 
 console.log("Input length = " + input.length);
 
-let X = 1;
-let cycle = 0;
-let input_arr = [];
-let num_cycles = 0;
-let signal_strength = 0;
-let total_signal_strength = 0;
-let row = 0;
+class monkey {
+    constructor(){
+        this.items = []
+        this.true_monkey = null;
+        this.false_monkey = null;
+        this.test = 0;
+        this.num_inspections = 0;
+    }
+    add_item(item){
+        this.items.push(item);
+    }
+}
 
+let monkeys_list = []
+let tmp_items = []
+
+let operator_dict = {
+    '+': function (x, y) { return x + y },
+    '*': function (x, y) { return x * y }
+}
+
+function operation_glob(old, operator, op_2){
+    return(operator_dict[operator](old, op_2 == 'old' ? old:parseInt(op_2)))
+}
 
 for(let i=0; i<input.length;i++){
-    // console.log(input[i])
-    input_arr = input[i].split(' ');
-    if(input_arr[0] == 'noop'){
-        num_cycles = 1;
-    } else if (input_arr[0] == 'addx'){
-        num_cycles = 2;
+    if(input[i].split(' ')[0] == "Monkey"){
+        let new_monkey = new monkey();
+        tmp_items = input[i+1].match(/(\d+)/g)
+        new_monkey.items = tmp_items.map(numStr => parseInt(numStr))
+
+        tmp_items = input[i+2].split(/\s+/)
+        new_monkey.operands = [tmp_items[5], tmp_items[6]]
+        new_monkey.operation = function (old) {return(operation_glob(old, this.operands[0], this.operands[1]))}
+
+        new_monkey.test = parseInt(input[i+3].split(' ').at(-1));
+        new_monkey.true_monkey = parseInt(input[i+4].split(' ').at(-1));
+        new_monkey.false_monkey = parseInt(input[i+5].split(' ').at(-1));
+
+        // console.log(new_monkey.items, new_monkey.test, new_monkey.true_monkey, new_monkey.false_monkey);
+
+        monkeys_list.push(new_monkey)
     }
-
-    for(let j=0; j<num_cycles;j++){
-        // console.log("cycle = ", cycle, " X = ", X, " total = ", total_signal_strength)
-
-        // if(cycle%20 == 0 && cycle > 1){
-        if(cycle%40 == 0){
-            process.stdout.write("\n")
-            // signal_strength = X*cycle;
-            // total_signal_strength += signal_strength;
-            // console.log("cycle = ", cycle, " X = ", X, " signal_strenght = ", signal_strength)
-        }
-        if(Math.abs(X - (cycle%40)) <= 1){
-            process.stdout.write("#");
-        } else {
-            process.stdout.write(".");
-        }
-        cycle += 1;
-
-    }
-
-    if(input_arr[0] == 'addx'){
-        X += parseInt(input_arr[1]);
-    }
-
-
+    
+    i+=6;
 }
+
+// console.log(monkeys_list)
+
+let monkey_business = []
+let LCM = 1;
+
+for(let monkey_num = 0;monkey_num<monkeys_list.length;monkey_num++){
+    LCM *= monkeys_list[monkey_num].test
+}
+
+// console.log(LCM)
+
+for(let round = 0; round<10000; round++){
+    for(let monkey_num = 0;monkey_num<monkeys_list.length;monkey_num++){
+        let this_monkey = monkeys_list[monkey_num]
+        // console.log("monkey = ", monkey_num)
+
+        for(let item_num = 0;item_num<this_monkey.items.length;item_num++){
+            this_monkey.num_inspections++
+            let item_val = this_monkey.items[item_num]
+            // console.log("Item value = ", item_val)
+            item_val = this_monkey.operation(item_val)
+            item_val %= LCM
+            if(item_val % this_monkey.test == 0){
+                monkeys_list[this_monkey.true_monkey].items.push(item_val)
+                // console.log("Item value now = ", item_val, " throwing to monkey, ", this_monkey.true_monkey)
+            } else {
+                monkeys_list[this_monkey.false_monkey].items.push(item_val)
+                // console.log("Item value now = ", item_val, " throwing to monkey, ", this_monkey.false_monkey)
+            }
+            // console.log(item_val)
+        }
+        this_monkey.items = []
+    }  
+    
+}
+
+// console.log(monkeys_list)
+
+for(let monkey_num = 0;monkey_num<monkeys_list.length;monkey_num++){
+    monkey_business.push(monkeys_list[monkey_num].num_inspections);
+}
+monkey_business.sort(function (a, b) {  return b - a;  });
+
+console.log("monkey business = ", monkey_business[0] * monkey_business[1])
+
