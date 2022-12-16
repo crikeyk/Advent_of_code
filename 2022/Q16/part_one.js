@@ -29,16 +29,23 @@ for(let i=0; i<input.length;i++){
 
 console.log(valves)
 
+function shortest_path(from, to){
+    let queue = []
+    
+}
+
 start_valve = 'AA'
 time_left = 30
 
-function value_to_open(valve, time){
-    next_values = valves[valve].connected
-    if(time < 0){
-        for(let i=0; i<new_valves.length;i++){
-            value_to_open(next_values[i], time-1)
-        }
-    }
-}
+// function value_to_open(valve, time){
+//     next_values = valves[valve].connected
+//     if(time < 0){
+//         for(let i=0; i<new_valves.length;i++){
+//             value_to_open(next_values[i], time-1)
+//         }
+//     }
+// }
 
-value_to_open(start_valve, time_left)
+// value_to_open(start_valve, time_left)
+
+console.log(shortest_path('AA', 'AA'))
