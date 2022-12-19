@@ -1,4 +1,5 @@
 const {input} = require('./input');
+const {localStorage} = require("node-localstorage");
 
 class valve {
     constructor(name){
@@ -10,6 +11,8 @@ class valve {
 }
 
 valves = {}
+flow_valves = {}
+start_valve = 'AA'
 
 for(let i=0; i<input.length;i++){
     // console.log(input[i])
@@ -25,27 +28,119 @@ for(let i=0; i<input.length;i++){
     }))
 
     valves[new_valve.name] = new_valve
+    if(new_valve.flow > 0 || new_valve.name == start_valve){
+        new_flow_value = new valve(new_valve.name)
+        new_flow_value.flow = new_valve.flow
+        new_flow_value.connected = {}
+        flow_valves[new_valve.name] = new_flow_value
+    }
 }
 
-console.log(valves)
+// console.log(valves)
+// console.log(JSON.stringify(valves))
+// localStorage.setItem("userData", JSON.stringify(valves));
+// // let valves = localStorage.getItem("userData");
+// console.log("stored data")
 
-function shortest_path(from, to){
+count = 0
+
+function shortest_path_BFS(from, to){
+    // console.log("received ", from, " ", to)
     let queue = []
-    
+    let visited = []
+    queue.push([from, 0])
+    i = 0
+    while(queue[i][0] != to){
+        // console.log("Visiting ", queue[i])
+        visited.push(queue[i][0])
+        for(let j=0; j<valves[queue[i][0]].connected.length;j++){
+            next_valve = valves[queue[i][0]].connected[j]
+            if(next_valve == to){
+                return(queue[i][1] + 1)
+            }
+            if(!visited.includes[next_valve]){
+                // console.log("pushing ", new_valve)
+                queue.push([next_valve, queue[i][1] + 1])
+            }
+        }
+        i++
+    }
+    // console.log("length is ", queue.length)
+    return(queue[i][1])  
 }
 
-start_valve = 'AA'
-time_left = 30
+// console.log(shortest_path_BFS('AA', 'HM'))
 
-// function value_to_open(valve, time){
-//     next_values = valves[valve].connected
-//     if(time < 0){
-//         for(let i=0; i<new_valves.length;i++){
-//             value_to_open(next_values[i], time-1)
-//         }
-//     }
-// }
+// console.log(flow_valves)
 
-// value_to_open(start_valve, time_left)
+for(var from_key in flow_valves){
+    console.log(from_key)
+    // flow_valves[i].connected = {}
+    for(var to_key in flow_valves){
+        flow_valves[from_key].connected[to_key] = shortest_path_BFS(from_key, to_key)
+    }
+}
 
-console.log(shortest_path('AA', 'AA'))
+// console.log("done")
+
+// console.log(flow_valves)
+
+visited_order = ['AA', 'DD', 'BB', 'JJ', 'HH', 'EE', 'CC']
+max_release_total = 0
+
+function get_total_pressure(visited_order, time_left){
+    total_pressure = 0
+    valve_num = 1
+    for(let i=0; i<visited_order.length;i++){
+        // console.log("visiting ", visited_order[i], " total flow increasing by ", flow_valves[visited_order[i]].flow, " * ", time_left, " = ", flow_valves[visited_order[i]].flow)
+        if(time_left <= 0){
+            break
+        }
+        // console.log("Opening valve ", visited_order[i], " at time ", 30 - time_left)
+        total_pressure += flow_valves[visited_order[i]].flow*time_left
+        time_left -= flow_valves[visited_order[i]].connected[visited_order[i+1]] + 1
+    }
+    // console.log("testing route ", visited_order, " total pressure is ", total_pressure)
+    return(total_pressure)
+}
+
+
+max_release = 0
+total_time = 30
+
+// console.log(flow_valves)
+
+function generate_route(route, times){
+    // console.log("time left is ", time_left, "trying route ", route)
+    this_valve = route.at(-1)
+    next_step = false
+    for(var next_valve in flow_valves[this_valve].connected){
+        // console.log(next_valve, flow_valves[this_valve].connected[next_valve], times.at(-1))
+        if((!route.includes(next_valve)) && flow_valves[this_valve].connected[next_valve] < times.at(-1)){
+            // console.log("HERE")
+            // if(route.at(-1) == 'BB'){
+            //     console.log("this valve is", this_valve)
+            //     console.log("Route is ", route)
+            //     // console.log("Am at ", this_valve, " Trying ",  next_valve, " at time of ", (flow_valves[this_valve].connected[next_valve] + 1))
+            // }
+            route.push(next_valve)
+            times.push(times.at(-1) - (flow_valves[route.at(-1)].connected[next_valve] + 1))
+            // console.log("sending route ", route)
+            generate_route(route, times)
+            route.pop()
+            times.pop()
+            next_step = true
+        }
+    }
+
+    if(!next_step && get_total_pressure(route, total_time) > max_release){
+        max_release = get_total_pressure(route, total_time)
+        console.log("Max release of ", max_release, " at ", route, " at times ", times.map(x => total_time-x-1))
+    }
+}
+
+generate_route(['AA'], [total_time])
+
+// console.log("total pressure is ", get_total_pressure(visited_order, [6]))
+
+// console.log("max_pressure is ", max_release)
