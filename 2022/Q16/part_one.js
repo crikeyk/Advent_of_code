@@ -112,19 +112,19 @@ total_time = 30
 
 function generate_route(route, times){
     // console.log("time left is ", time_left, "trying route ", route)
-    this_valve = route.at(-1)
     next_step = false
-    for(var next_valve in flow_valves[this_valve].connected){
+    for(var next_valve in flow_valves[route.at(-1)].connected){
         // console.log(next_valve, flow_valves[this_valve].connected[next_valve], times.at(-1))
-        if((!route.includes(next_valve)) && flow_valves[this_valve].connected[next_valve] < times.at(-1)){
+        if((!route.includes(next_valve)) && flow_valves[route.at(-1)].connected[next_valve] < times.at(-1)){
             // console.log("HERE")
             // if(route.at(-1) == 'BB'){
             //     console.log("this valve is", this_valve)
+            //     console.log("route -1 is", route.at(-1))
             //     console.log("Route is ", route)
             //     // console.log("Am at ", this_valve, " Trying ",  next_valve, " at time of ", (flow_valves[this_valve].connected[next_valve] + 1))
             // }
-            route.push(next_valve)
             times.push(times.at(-1) - (flow_valves[route.at(-1)].connected[next_valve] + 1))
+            route.push(next_valve)
             // console.log("sending route ", route)
             generate_route(route, times)
             route.pop()
@@ -135,7 +135,7 @@ function generate_route(route, times){
 
     if(!next_step && get_total_pressure(route, total_time) > max_release){
         max_release = get_total_pressure(route, total_time)
-        console.log("Max release of ", max_release, " at ", route, " at times ", times.map(x => total_time-x-1))
+        console.log("Max release of ", max_release, " at ", route, " at times ", times.map(x => total_time-x))
     }
 }
 
