@@ -77,6 +77,9 @@ for(var from_key in flow_valves){
     console.log(from_key)
     // flow_valves[i].connected = {}
     for(var to_key in flow_valves){
+        if(to_key == from_key){
+            continue
+        }
         flow_valves[from_key].connected[to_key] = shortest_path_BFS(from_key, to_key)
     }
 }
@@ -125,7 +128,7 @@ function generate_route(route, times){
     // console.log("time left is ", time_left, "trying route ", route)
     next_step = false
     for(var next_valve in flow_valves[route.at(-1)].connected){
-        // console.log(next_valve, flow_valves[this_valve].connected[next_valve], times.at(-1))
+        // console.log(next_valve, flow_valves[route.at(-1)].connected[next_valve])
         if((!route.includes(next_valve)) && flow_valves[route.at(-1)].connected[next_valve] < times.at(-1)){
             times.push(times.at(-1) - (flow_valves[route.at(-1)].connected[next_valve] + 1))
             route.push(next_valve)
@@ -145,7 +148,7 @@ function generate_route(route, times){
     if(!next_step){
         let new_route = []
         let new_times = []
-        for(let i=0; i<route.length-1;i++){
+        for(let i=0; i<route.length;i++){
             new_route.push(route[i])
             new_times.push(times[i])
         }
@@ -155,7 +158,7 @@ function generate_route(route, times){
 
 generate_route(['AA'], [total_time])
 
-console.log(routes.length)
+// console.log(routes)
 
 for(let i=0; i<routes.length-1;i++){
     if(i%100 == 0){
@@ -163,6 +166,7 @@ for(let i=0; i<routes.length-1;i++){
     }
     for(let j=i+1; j<routes.length;j++){
         pressure = get_total_pressure(routes[i], routes[j])
+        // console.log("Trying routes ", routes[i], routes[j], pressure)
         if(pressure > max_release){
             console.log("new best routes, ", routes[i], routes[j])
             console.log("Max pressure is ", pressure)
