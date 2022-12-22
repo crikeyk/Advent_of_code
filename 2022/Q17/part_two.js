@@ -1,180 +1,182 @@
 const {input} = require('./input');
-const {localStorage} = require("node-localstorage");
 
-class valve {
-    constructor(name){
-        this.name = name
-        this.flow = 0
-        this.connected = []
-        this.open_time = 0
-    }
-}
+const input_width = input[0].length
+console.log(input_width)
 
-valves = {}
-flow_valves = {}
-start_valve = 'AA'
 
-for(let i=0; i<input.length;i++){
-    // console.log(input[i])
-    valve_tmp = input[i].match(/Valve ([A-Z]+) has flow rate=(\d+)/).slice(1, 3)
-    new_valve = new valve(valve_tmp[0])
-    new_valve.flow = parseInt(valve_tmp[1])
-    // console.log("valve name = ", valve_tmp[0], " flow rate is ", valve_tmp[1])
-    // new_value = new valve()
-
-    input[i].split('; ')[1].match(/([A-Z][A-Z])/g).forEach((element => {
-        new_valve.connected.push(element)
-        // console.log(element)
-    }))
-
-    valves[new_valve.name] = new_valve
-    if(new_valve.flow > 0 || new_valve.name == start_valve){
-        new_flow_value = new valve(new_valve.name)
-        new_flow_value.flow = new_valve.flow
-        new_flow_value.connected = {}
-        flow_valves[new_valve.name] = new_flow_value
-    }
-}
-
-// console.log(valves)
-// console.log(JSON.stringify(valves))
-// localStorage.setItem("userData", JSON.stringify(valves));
-// // let valves = localStorage.getItem("userData");
-// console.log("stored data")
-
-count = 0
-
-function shortest_path_BFS(from, to){
-    // console.log("received ", from, " ", to)
-    let queue = []
-    let visited = []
-    queue.push([from, 0])
-    i = 0
-    while(queue[i][0] != to){
-        // console.log("Visiting ", queue[i])
-        visited.push(queue[i][0])
-        for(let j=0; j<valves[queue[i][0]].connected.length;j++){
-            next_valve = valves[queue[i][0]].connected[j]
-            if(next_valve == to){
-                return(queue[i][1] + 1)
-            }
-            if(!visited.includes[next_valve]){
-                // console.log("pushing ", new_valve)
-                queue.push([next_valve, queue[i][1] + 1])
-            }
+function draw_tunnel(tunnel){
+    for(let i=tunnel.length-1; i>=0;i--){
+        row = tunnel[i]
+        process.stdout.write("|");
+        for(let j=0; j<row.length;j++){
+            process.stdout.write(row[j]);
         }
-        i++
+        process.stdout.write("|\n");
     }
-    // console.log("length is ", queue.length)
-    return(queue[i][1])  
+    process.stdout.write("+");
+
+    for(let j=0; j<row.length;j++){
+        process.stdout.write('-');
+    }
+    process.stdout.write("+\n");
 }
 
-// console.log(shortest_path_BFS('AA', 'HM'))
 
-// console.log(flow_valves)
+function draw_tunnel_with_rock(tunnel, rock, position){
 
-for(var from_key in flow_valves){
-    console.log(from_key)
-    // flow_valves[i].connected = {}
-    for(var to_key in flow_valves){
-        if(to_key == from_key){
-            continue
+    for(let i=tunnel.length-1; i>=0;i--){
+        row = tunnel[i]
+        process.stdout.write("|");
+        for(let j=0; j<row.length;j++){
+            try{
+                process.stdout.write(rock[i-position[1]][j-position[0]]);
+            }
+            catch {
+                process.stdout.write(row[j]);
+            }
+            // process.stdout.write(row[j]);
         }
-        flow_valves[from_key].connected[to_key] = shortest_path_BFS(from_key, to_key)
+        process.stdout.write("|\n");
     }
+    process.stdout.write("+");
+
+    for(let j=0; j<row.length;j++){
+        process.stdout.write('-');
+    }
+    process.stdout.write("+\n");
 }
 
-// console.log("done")
+rocks = [
+    [['#','#','#', '#']],
+    [['.','#','.'],
+     ['#','#','#'],
+     ['.','#','.']],
+    [['#','#','#'],
+     ['.','.','#'],
+     ['.','.','#']],
+    [['#'],
+     ['#'],
+     ['#'],
+     ['#']],
+    [['#', '#'],
+     ['#', '#']]
+]
 
-// console.log(flow_valves)
+function collides(tunnel, rock, position){
 
-visited_order = ['AA', 'DD', 'BB', 'JJ', 'HH', 'EE', 'CC']
-max_release_total = 0
-
-function get_total_pressure(rt_1, rt_2){
-    route_1 = rt_1[0]
-    times_1 = rt_1[1]
-
-    route_2 = rt_2[0]
-    times_2 = rt_2[1]
-
-    total_pressure = 0
-
-    for(let i=0; i<route_1.length;i++){
-        total_pressure += flow_valves[route_1[i]].flow*times_1[i]
+    if(position[0] < 0 || position[1] < 0 || position[0] + rock[0].length > tunnel_width){
+        return true
     }
 
-    for(let i=0; i<route_2.length;i++){
-        total_pressure += flow_valves[route_2[i]].flow*times_2[i]
-
-        for(let j=0; j<route_1.length;j++){
-            if(route_1[j] == route_2[i]){
-                total_pressure -= flow_valves[route_2[i]].flow*Math.min(times_1[j], times_2[i])
+    for(let i=0; i<rock.length;i++){
+        for(let j=0; j<rock[i].length;j++){
+            // console.log(position[1] + i, position[0] + j, tunnel.length)
+            if(rock[i][j] == '#' && (position[1] + i < tunnel.length && tunnel[position[1] + i][position[0] + j] != '.')){
+                return true
             }
         }
     }
-
-    return(total_pressure)
+    return false
 }
 
-max_release = 0
-total_time = 26
-
-// console.log(flow_valves)
-
-let routes = []
-
-function generate_route(route, times){
-    // console.log("time left is ", time_left, "trying route ", route)
-    next_step = false
-    for(var next_valve in flow_valves[route.at(-1)].connected){
-        // console.log(next_valve, flow_valves[route.at(-1)].connected[next_valve])
-        if((!route.includes(next_valve)) && flow_valves[route.at(-1)].connected[next_valve] < times.at(-1)){
-            times.push(times.at(-1) - (flow_valves[route.at(-1)].connected[next_valve] + 1))
-            route.push(next_valve)
-            // console.log("sending route ", route)
-            generate_route(route, times)
-            route.pop()
-            times.pop()
-            next_step = true
+function add_rock(tunnel, rock, position, char){
+    for(let i=0; i<rock.length;i++){
+        for(let j=0; j<rock[i].length;j++){
+            if(rock[i][j] == '#'){
+                tunnel[position[1] + i][position[0] + j] = char            
+            }
         }
     }
+}
+const tunnel_width = 7
+const num_rocks = 1000000000
+let highest_rock = -1
+offset = 0
+input_num = 0
+shift_val = input_width*rocks.length
+last_highest = 0
 
-    // if(!next_step && get_total_pressure(route, total_time) > max_release){
-    //     max_release = get_total_pressure(route, total_time)
-    //     console.log("Max release of ", max_release, " at ", route, " at times ", times.map(x => total_time-x))
+repeats = []
+repeat_num = 1
+
+console.log("shift value = ", shift_val)
+
+tunnel = new Array(3).fill(0).map(() => new Array(tunnel_width).fill("."));
+
+
+for(let rock_number=0; rock_number<num_rocks;rock_number++){
+
+    if(rock_number % shift_val == 0){
+        added_height = highest_rock-last_highest
+        last_highest = highest_rock
+        // console.log(added_height)
+        repeats.push(added_height)
+    }
+
+    if(rock_number % 10000000 == 0){
+        console.log(repeats)
+        // for(let i=1; i<1000;i++){
+        //     pattern = true
+        //         for(let j=1; j<50;j++){
+        //             if(repeats[repeats.length-i] != repeats[repeats.length-(j*i)]){
+        //                 pattern = false
+        //                 break
+        //             }
+        //         }
+        //         if(pattern){
+        //             console.log("Pattern found of length ", i)
+        //             break
+        //         }
+        // }
+    }
+
+    settled = false
+    rock_position = [2, highest_rock+4]
+    rock = rocks[rock_number%rocks.length]
+    while(rock_position[1] + rock.length-1 >= tunnel.length){
+        tunnel.push(new Array(tunnel_width).fill("."))
+    }
+
+    while(!settled){
+        // draw_tunnel_with_rock(tunnel, rock, rock_position)
+
+        gas_move = input[0][input_num%input_width] == '>' ? 1:-1
+        input_num++
+
+        next_position = [rock_position[0] + gas_move, rock_position[1]]
+        if(!collides(tunnel, rock, next_position)){
+            rock_position[0] = next_position[0]
+            // console.log("slide,", gas_move)
+        } else {
+            // console.log("no slide")
+        }
+        // draw_tunnel_with_rock(tunnel, rock, rock_position)
+
+
+        next_position = [rock_position[0], rock_position[1]-1]
+        if(!collides(tunnel, rock, next_position)){
+            rock_position[1] = next_position[1]
+            // console.log("fall")
+        } else {
+            add_rock(tunnel, rock, rock_position, '@')
+            settled = true
+            highest_rock = Math.max(highest_rock, rock_position[1]+rock.length-1)
+            // console.log(highest_rock)
+            // console.log("no fall")
+            break
+        }
+
+    }
+    // draw_tunnel(tunnel) 
+
+    // if(tunnel.length >= 2*shift_val){
+    //     tunnel = tunnel.slice(shift_val, -1)
+    //     offset += shift_val
+    //     highest_rock -= shift_val
     // }
-
-    if(!next_step){
-        let new_route = []
-        let new_times = []
-        for(let i=0; i<route.length;i++){
-            new_route.push(route[i])
-            new_times.push(times[i])
-        }
-        routes.push([new_route, new_times])
-    }
 }
 
-generate_route(['AA'], [total_time])
+console.log(offset + highest_rock+1)
 
-// console.log(routes)
+// draw_tunnel(tunnel)
 
-for(let i=0; i<routes.length-1;i++){
-    if(i%100 == 0){
-        console.log("Trying route number ", i)
-    }
-    for(let j=i+1; j<routes.length;j++){
-        pressure = get_total_pressure(routes[i], routes[j])
-        // console.log("Trying routes ", routes[i], routes[j], pressure)
-        if(pressure > max_release){
-            console.log("new best routes, ", routes[i], routes[j])
-            console.log("Max pressure is ", pressure)
-        }
-        max_release = Math.max(pressure, max_release)
-    }
-}
-
-// console.log("total pressure is ", get_total_pressure(visited_order, [6]))
-
-// console.log("max_pressure is ", max_release)

@@ -88,8 +88,8 @@ function add_rock(tunnel, rock, position, char){
     }
 }
 const tunnel_width = 7
-const num_rocks = 5
-let highest_rock = 0
+const num_rocks = 2022
+let highest_rock = -1
 input_num = 0
 
 tunnel = new Array(3).fill(0).map(() => new Array(tunnel_width).fill("."));
@@ -97,41 +97,46 @@ tunnel = new Array(3).fill(0).map(() => new Array(tunnel_width).fill("."));
 
 for(let rock_number=0; rock_number<num_rocks;rock_number++){
     settled = false
-    rock_position = [2, highest_rock+3]
+    rock_position = [2, highest_rock+4]
     rock = rocks[rock_number%rocks.length]
     while(rock_position[1] + rock.length-1 >= tunnel.length){
         tunnel.push(new Array(tunnel_width).fill("."))
     }
     while(!settled){
-        draw_tunnel_with_rock(tunnel, rock, rock_position)
+        // draw_tunnel_with_rock(tunnel, rock, rock_position)
 
-        gas_move = input[Math.floor(input_num/input_width)][input_num%input_width] == '>' ? 1:-1
+        gas_move = input[0][input_num%input_width] == '>' ? 1:-1
         input_num++
 
         next_position = [rock_position[0] + gas_move, rock_position[1]]
         if(!collides(tunnel, rock, next_position)){
             rock_position[0] = next_position[0]
-            console.log("slide,", gas_move)
+            // console.log("slide,", gas_move)
         } else {
-            console.log("no slide")
+            // console.log("no slide")
         }
+        // draw_tunnel_with_rock(tunnel, rock, rock_position)
+
 
         next_position = [rock_position[0], rock_position[1]-1]
         if(!collides(tunnel, rock, next_position)){
             rock_position[1] = next_position[1]
-            console.log("fall")
+            // console.log("fall")
         } else {
             add_rock(tunnel, rock, rock_position, '@')
             settled = true
             highest_rock = Math.max(highest_rock, rock_position[1]+rock.length-1)
-            console.log("no fall")
+            // console.log(highest_rock)
+            // console.log("no fall")
             break
         }
         
 
 
     }
-    draw_tunnel(tunnel)
+    // draw_tunnel(tunnel)
 }
+
+console.log(highest_rock+1)
 
 // draw_tunnel(tunnel)
